@@ -1,6 +1,6 @@
 ## Cucumber-Gradle-Blueprint
 
-Bootstrap project to demonstrate the source code based generation of Jenkins jobs and views via a Gradle task. The jobs are thought to trigger the (repeated) execution of Cucumber features and monitor the results. The job names are generated out of the feature file names, the execution environment (e.g. prod, uat) and cucumber tags (e.g. smoke) contained in the feature files. For each env and tag combination (e.g. 'smoke.uat' or 'untagged.prod') a view and a *multijob* is created. A *multijob* is a parent (or upstream) job which comprises all child (or downstream) jobs which correspond to the tag/env - specification.
+Blueprint project to demonstrate the source code based generation of Jenkins jobs and views via a Gradle task. The jobs are thought to trigger the (repeated) execution of Cucumber features and monitor the results. The job names are generated out of the feature file names, the execution environment (e.g. prod, uat) and cucumber tags (e.g. smoke) contained in the feature files. For each env and tag combination (e.g. 'smoke.uat' or 'untagged.prod') a view and a *multijob* is created. A *multijob* is a parent (or upstream) job which comprises all child (or downstream) jobs which correspond to the tag/env - specification.
 
 
 ### Setup
