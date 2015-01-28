@@ -7,21 +7,16 @@ ext {
     jenkins_cucumber_default_tag = 'untagged'
     // systems under test
     jenkins_cucumber_suts = ['prod', 'uat']
-    // TODO: adapt
-    jenkins_git_url = 'ssh://git@ssh.github.com:443/modalkonform/gradle_jenkins_bootstrap.git'
-    // TODO: remove
-    jenkins_git_creds = '546a8958-5e22-4304-8456-2b17ba23b501'
+    jenkins_git_url = 'https://github.com/modalkonform/cucumber-gradle-blueprint'
 }
 
 jenkins {
     servers {
         local {
             url 'http://localhost:8080'
-//            secure project.hasProperty('jenkins_user')
-            secure false
-//            username project.hasProperty('jenkins_user') ? jenkins_user : ''
-//            password project.hasProperty('jenkins_pass') ? jenkins_pass : ''
-
+            secure true
+            username project.hasProperty('jenkins_user') ? jenkins_user : ''
+            password project.hasProperty('jenkins_pass') ? jenkins_pass : ''
         }
     }
     defaultServer servers.local
@@ -47,9 +42,7 @@ jenkins {
             "${jobName}" {
                 definition {
                     xml templates.template_job.override { jobXml ->
-                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.url = jenkins_git_url
-                        // TODO: remove
-                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.credentialsId = jenkins_git_creds
+                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.url = jenkins_git_url                        
                         jobXml.builders.'hudson.plugins.gradle.Gradle'.switches = gradleSwitch
                     }
                 }
