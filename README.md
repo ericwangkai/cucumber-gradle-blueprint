@@ -22,14 +22,15 @@ Bootstrap project to demonstrate the source code based generation of Jenkins job
 
 
 ### Usage
+
 create and/or update jobs/views on your Jenkins server
 
-    ./gradlew updateJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=password
+    ./gradlew updateJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=<password>
 
 remove all items on server
 
-    ./gradlew deleteJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=password
+    ./gradlew deleteJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=<password>
 
 check which project job/view configuration differs from the server version
 
-    ./gradlew validateJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=password
+    ./gradlew validateJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=<password>

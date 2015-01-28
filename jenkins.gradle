@@ -42,7 +42,7 @@ jenkins {
             "${jobName}" {
                 definition {
                     xml templates.template_job.override { jobXml ->
-                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.url = jenkins_git_url                        
+                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.url = jenkins_git_url
                         jobXml.builders.'hudson.plugins.gradle.Gradle'.switches = gradleSwitch
                     }
                 }
