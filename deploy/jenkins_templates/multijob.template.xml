@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<com.tikal.jenkins.plugins.multijob.MultiJobProject plugin="jenkins-multijob-plugin@1.16">
+    <actions/>
+    <description></description>
+    <keepDependencies>false</keepDependencies>
+    <properties/>
+    <scm class="hudson.scm.NullSCM"/>
+    <canRoam>true</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers/>
+    <concurrentBuild>false</concurrentBuild>
+    <builders>
+        <com.tikal.jenkins.plugins.multijob.MultiJobBuilder>
+            <phaseName>cucumber</phaseName>
+            <phaseJobs></phaseJobs>
+            <continuationCondition>COMPLETED</continuationCondition>
+        </com.tikal.jenkins.plugins.multijob.MultiJobBuilder>
+    </builders>
+    <publishers>
+        <hudson.tasks.ArtifactArchiver>
+            <artifacts>**/*.json</artifacts>
+            <allowEmptyArchive>false</allowEmptyArchive>
+            <onlyIfSuccessful>false</onlyIfSuccessful>
+            <fingerprint>true</fingerprint>
+            <defaultExcludes>true</defaultExcludes>
+        </hudson.tasks.ArtifactArchiver>
+        <net.masterthought.jenkins.CucumberReportPublisher plugin="cucumber-reports@0.0.23">
+            <jsonReportDirectory></jsonReportDirectory>
+            <pluginUrlPath>/jenkins</pluginUrlPath>
+            <skippedFails>false</skippedFails>
+            <undefinedFails>false</undefinedFails>
+            <noFlashCharts>true</noFlashCharts>
+            <ignoreFailedTests>false</ignoreFailedTests>
+        </net.masterthought.jenkins.CucumberReportPublisher>
+        <org.jenkinsci.plugins.cucumber.jsontestsupport.CucumberTestResultArchiver plugin="cucumber-testresult-plugin@0.7">
+            <testResults>**/*.json</testResults>
+        </org.jenkinsci.plugins.cucumber.jsontestsupport.CucumberTestResultArchiver>
+        <com.castlemon.jenkins.performance.CucumberPerfRecorder plugin="cucumber-perf@2.0.6">
+            <jsonReportDirectory></jsonReportDirectory>
+            <jsonReportFileName>cucumber.json</jsonReportFileName>
+            <countOfSortedSummaries>50</countOfSortedSummaries>
+        </com.castlemon.jenkins.performance.CucumberPerfRecorder>
+    </publishers>
+    <buildWrappers>
+        <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.24">
+            <deleteDirs>false</deleteDirs>
+            <cleanupParameter></cleanupParameter>
+            <externalDelete></externalDelete>
+        </hudson.plugins.ws__cleanup.PreBuildCleanup>
+    </buildWrappers>
+</com.tikal.jenkins.plugins.multijob.MultiJobProject>

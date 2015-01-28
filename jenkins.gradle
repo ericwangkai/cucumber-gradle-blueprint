@@ -1,0 +1,204 @@
+apply plugin: 'com.terrafolio.jenkins'
+
+// global config
+ext {
+    jenkins_default_gradle_switches = ''
+    jenkins_cucumber_tags = ['untagged', 'smoke']
+    jenkins_cucumber_default_tag = 'untagged'
+    // systems under test
+    jenkins_cucumber_suts = ['prod', 'uat']
+    // TODO: adapt
+    jenkins_git_url = 'ssh://git@ssh.github.com:443/modalkonform/gradle_jenkins_bootstrap.git'
+    // TODO: remove
+    jenkins_git_creds = '546a8958-5e22-4304-8456-2b17ba23b501'
+}
+
+jenkins {
+    servers {
+        local {
+            url 'http://localhost:8080'
+//            secure project.hasProperty('jenkins_user')
+            secure false
+//            username project.hasProperty('jenkins_user') ? jenkins_user : ''
+//            password project.hasProperty('jenkins_pass') ? jenkins_pass : ''
+
+        }
+    }
+    defaultServer servers.local
+
+    templates {
+        template_job {
+            xml file('deploy/jenkins_templates/job.template.xml')
+        }
+        template_view {
+            xml file('deploy/jenkins_templates/view.template.xml')
+        }
+        template_multijob {
+            xml file('deploy/jenkins_templates/multijob.template.xml')
+        }
+    }
+
+    def jobNames = getJobNameList()
+    def multiJobNames = [:]
+    def envs = jenkins_cucumber_suts.collect{ sut -> jenkins_cucumber_tags*.concat('.' + sut)}.flatten()
+
+    jobs {
+        jobNames.each { jobName, gradleSwitch ->
+            "${jobName}" {
+                definition {
+                    xml templates.template_job.override { jobXml ->
+                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.url = jenkins_git_url
+                        // TODO: remove
+                        jobXml.scm.userRemoteConfigs.'hudson.plugins.git.UserRemoteConfig'.credentialsId = jenkins_git_creds
+                        jobXml.builders.'hudson.plugins.gradle.Gradle'.switches = gradleSwitch
+                    }
+                }
+            }
+        }
+
+        envs.each { multiSelector ->
+            def multiJobName = ".cucumber.${multiSelector}.multijob"
+            multiJobNames.put(multiJobName, "")
+            def (jobListXmlString, copyListXmlString) = getMultiJobLists(multiSelector)
+            "${multiJobName}" {
+                definition {
+                    xml templates.template_multijob.override { multiJobXml ->
+                        multiJobXml.builders.'com.tikal.jenkins.plugins.multijob.MultiJobBuilder'.phaseJobs.replaceNode {
+                            // mkp is a namespace to escape away from normal building mode and get access
+                            // to Groovy's StreamingMarkupBuilder helper methods
+                            mkp.yield(new XmlSlurper().parseText(jobListXmlString))
+                        }
+                        new XmlSlurper().parseText(copyListXmlString).children().each { node ->
+                            multiJobXml.builders.appendNode(node)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    views {
+        // "untagged" is treated as default view
+        envs.each { viewName ->
+            "${viewName}" {
+                xml templates.template_view.override { xml ->
+                    xml.jobNames.replaceNode {
+                        mkp.yield(new XmlSlurper().parseText(getViewJobs(viewName, envs, multiJobNames + jobNames)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Generates multi-job xml strings for inclusion in the template
+ * @param pattern to filter the desired job names out of all jobs
+ * @return [ jobList, copyArtifactsList] xml strings to be included in template
+ */
+def getMultiJobLists(pattern) {
+    final jobListTemplate = """
+        <com.tikal.jenkins.plugins.multijob.PhaseJobsConfig>
+            <jobName>JOB_NAME</jobName>
+            <currParams>false</currParams>
+            <exposedSCM>false</exposedSCM>
+            <disableJob>false</disableJob>
+            <parsingRulesPath></parsingRulesPath>
+            <maxRetries>0</maxRetries>
+            <enableRetryStrategy>false</enableRetryStrategy>
+            <enableCondition>false</enableCondition>
+            <abortAllJob>false</abortAllJob>
+            <condition></condition>
+            <configs class="empty-list"/>
+            <killPhaseOnJobResultCondition>NEVER</killPhaseOnJobResultCondition>
+            <buildOnlyIfSCMChanges>false</buildOnlyIfSCMChanges>
+        </com.tikal.jenkins.plugins.multijob.PhaseJobsConfig>
+    """
+
+    final copyArtifactsTemplate = """
+        <hudson.plugins.copyartifact.CopyArtifact plugin=\"copyartifact@1.33\">
+            <project>PROJECT_NAME</project>
+            <filter>**/*.json</filter>
+            <target>TARGET_DIR</target>
+            <excludes></excludes>
+            <selector class="hudson.plugins.copyartifact.LastCompletedBuildSelector"/>
+            <flatten>true</flatten>
+            <doNotFingerprintArtifacts>false</doNotFingerprintArtifacts>
+        </hudson.plugins.copyartifact.CopyArtifact>
+    """
+
+    def copyArtifactsList = "<builders>"
+    def jobList = "<phaseJobs>"
+
+    (getJobNameList().keySet() as List).each { job ->
+        if (job =~ /${pattern}/) {
+            jobList += jobListTemplate.replace("JOB_NAME", "${job}")
+            copyArtifactsList += copyArtifactsTemplate.replace("PROJECT_NAME", "${job}").replace("TARGET_DIR", "${job}")
+        }
+    }
+
+    jobList += "</phaseJobs>"
+    copyArtifactsList += "</builders>"
+
+    return [ jobList, copyArtifactsList ]
+}
+
+/**
+ * Creating a job map from all features files contained in the project
+ * @return map with key=jobname and value=cucumber switches for the gradle cmdline
+ */
+def getJobNameList() {
+    def jobMap = [:]
+    def featureBase = "src/test/resources/features/"
+    def pattern = null
+    new File(featureBase).eachFileRecurse() {
+        if (it.name =~ /\.feature$/) {
+            def fileName = it.toString().replaceFirst(featureBase, "")
+            def jobName = fileName.replaceFirst("/", ".")
+            if (pattern == null || pattern.matcher(jobName).find()) {
+                jenkins_cucumber_tags.each { tag ->
+                    if (!tag || tag == jenkins_cucumber_default_tag || it.text.contains("@${tag}")) {
+                        jenkins_cucumber_suts.each { sut ->
+                            jobMap.put(([jobName,tag,sut] - '').join('.'), getSwitchesString(fileName, sut, tag))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return jobMap
+}
+
+/**
+ * Build cucumber switches for the gradle cmdline
+ * e.g. -Penv=uat -Pfeature=Search.feature -PadditionalArgs="--tags @smoke --monochrome"
+ * @param fileName relative feature file path e.b. multimedia/Multimedia.feature
+ * @param sut system under test (prod, uat, ...)
+ * @param tag (cucumber tag e.g. smoke)
+ * @return
+ */
+def getSwitchesString(fileName, sut, tag) {
+    def tagString = (tag && !(tag == jenkins_cucumber_default_tag)) ? "--tags @${tag} " : ''
+    return "-Penv=${sut} -Pfeature=${fileName} -PadditionalArgs=\"${tagString}--monochrome\" ${ext.jenkins_default_gradle_switches}"
+}
+
+/**
+ * Generates a job list xml string for the view named "$env"
+ * @param env current environment
+ * @param envs all environments needed for generating default view
+ * @param allJobNames all jobs to select view jobs from
+ * @return all jobs for a view as xml string
+ */
+def getViewJobs(env, envs, allJobNames) {
+    def jobListForView = "<jobNames><comparator class=\"hudson.util.CaseInsensitiveComparator\"/>"
+    def filter = ".*?${env}.*"
+    if (env =~ /${jenkins_cucumber_default_tag}/) {
+        // default filter means everything except the specified narrowing other tags
+        filter = envs.findAll{ !(it ==~ /.*${env}.*/) }.collect{ "(?!.*${it}.*)" }.join('') + '.*'
+    }
+    (allJobNames.keySet() as List).grep(~/${filter}/).each { job ->
+        jobListForView += "<string>${job}</string>"
+    }
+    jobListForView += "</jobNames>"
+    return jobListForView
+}

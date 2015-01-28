@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'com.terrafolio.jenkins' version '1.2.3'
+}
+
+apply from: 'jenkins.gradle'
+
+description = 'Demonstration of gradle, jenkins and cucumber configuration'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile(
+            "org.fluentlenium:fluentlenium-core:0.10.3",
+            "org.fluentlenium:fluentlenium-assertj:0.10.3",
+            "org.fluentlenium:fluentlenium-cucumber:0.10.3"
+    )
+
+    testCompile(
+            "info.cukes:cucumber-java:1.1.8"
+    )
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2.1'
+}
+
+task cucumber(description: 'Runs the cucumber tests.', group: 'Cucumber') {
+    dependsOn assemble, compileTestJava
+
+    doLast {
+        def argList = [
+                '--format', 'pretty',
+                '--format', "json:${buildDir}/cucumber/json/cucumber.json",
+                '--glue', 'classpath:jenkins_gradle_bootstrap'
+        ]
+
+        /**
+         * If tags are given as additional arguments parameter they are added to
+         * the gradle w call
+         * e.g.: ./gradlew -PadditionalArgs="--tags @foo,@bar --tags @baz"
+         */
+        if (project.hasProperty('additionalArgs') && additionalArgs instanceof String) {
+            def argString = (String) additionalArgs;
+            argList.addAll(argString.split(" "))
+        }
+
+        //  determine feature directory
+        def absolutePathToFeatureDir = "${sourceSets.test.resources.srcDirs.iterator().next()}/features/"
+
+        if (project.hasProperty('feature') && project.feature) {
+            feature.split(" ").each() { argList.add(absolutePathToFeatureDir.plus(it)) }
+        } else {
+            // run all features (cucumber will search recursively)
+            argList.add(absolutePathToFeatureDir)
+        }
+
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.testRuntime + sourceSets.main.output + sourceSets.test.output
+            args = argList
+        }
+    }
+}

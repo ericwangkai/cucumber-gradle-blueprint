@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+    <actions/>
+    <description></description>
+    <logRotator class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>200</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+    </logRotator>
+    <keepDependencies>false</keepDependencies>
+    <properties/>
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@2.3.4">
+        <configVersion>2</configVersion>
+        <userRemoteConfigs>
+            <hudson.plugins.git.UserRemoteConfig>
+                <url></url>
+                <credentialsId></credentialsId>
+            </hudson.plugins.git.UserRemoteConfig>
+        </userRemoteConfigs>
+        <branches>
+            <hudson.plugins.git.BranchSpec>
+                <name>*/master</name>
+            </hudson.plugins.git.BranchSpec>
+        </branches>
+        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+        <submoduleCfg class="list"/>
+        <extensions>
+            <hudson.plugins.git.extensions.impl.CleanBeforeCheckout/>
+            <hudson.plugins.git.extensions.impl.PruneStaleBranch/>
+        </extensions>
+    </scm>
+    <canRoam>true</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers/>
+    <concurrentBuild>true</concurrentBuild>
+    <builders>
+        <hudson.plugins.gradle.Gradle plugin="gradle@1.24">
+            <description></description>
+            <switches></switches>
+            <tasks>cucumber</tasks>
+            <rootBuildScriptDir></rootBuildScriptDir>
+            <buildFile></buildFile>
+            <gradleName>(Default)</gradleName>
+            <useWrapper>true</useWrapper>
+            <makeExecutable>true</makeExecutable>
+            <fromRootBuildScriptDir>true</fromRootBuildScriptDir>
+            <useWorkspaceAsHome>false</useWorkspaceAsHome>
+        </hudson.plugins.gradle.Gradle>
+    </builders>
+    <publishers>
+        <hudson.tasks.ArtifactArchiver>
+            <artifacts>build/cucumber/json/*.json</artifacts>
+            <allowEmptyArchive>true</allowEmptyArchive>
+            <onlyIfSuccessful>false</onlyIfSuccessful>
+            <fingerprint>true</fingerprint>
+            <defaultExcludes>true</defaultExcludes>
+        </hudson.tasks.ArtifactArchiver>
+        <com.castlemon.jenkins.performance.CucumberPerfRecorder plugin="cucumber-perf@2.0.6">
+            <jsonReportDirectory></jsonReportDirectory>
+            <jsonReportFileName>cucumber.json</jsonReportFileName>
+            <countOfSortedSummaries>50</countOfSortedSummaries>
+        </com.castlemon.jenkins.performance.CucumberPerfRecorder>
+        <org.jenkinsci.plugins.cucumber.jsontestsupport.CucumberTestResultArchiver plugin="cucumber-testresult-plugin@0.7">
+            <testResults>build/cucumber/json/*.json</testResults>
+        </org.jenkinsci.plugins.cucumber.jsontestsupport.CucumberTestResultArchiver>
+        <net.masterthought.jenkins.CucumberReportPublisher plugin="cucumber-reports@0.0.23">
+            <jsonReportDirectory></jsonReportDirectory>
+            <pluginUrlPath>/jenkins/</pluginUrlPath>
+            <skippedFails>false</skippedFails>
+            <undefinedFails>false</undefinedFails>
+            <noFlashCharts>true</noFlashCharts>
+            <ignoreFailedTests>false</ignoreFailedTests>
+        </net.masterthought.jenkins.CucumberReportPublisher>
+    </publishers>
+    <buildWrappers/>
+</project>

@@ -1,0 +1,19 @@
+# IDE files
+.idea
+.*.sw*
+*.iml
+.project
+.classpath
+
+# Gradle
+.gradle
+build
+
+*~
+.DS_Store
+
+# iOS driver
+ios-driver.log
+/bin
+
+gradle/.gradle
