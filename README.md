@@ -5,7 +5,8 @@ Blueprint project to demonstrate the source code based generation of Jenkins job
 
 ### Setup
 
-  * download, install and start [Jenkins](http://jenkins-ci.org/) (example assumes Jenkins at http://localhost:8080, as configured [here](/jenkins.gradle)):
+  * download, install and start [Jenkins](http://jenkins-ci.org/) (example assumes Jenkins at http://localhost:8080, as configured [here](/jenkins.gradle#L16))
+
   * install Jenkins plugins
 	  * [Git](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin)
 	  * [Gradle](https://wiki.jenkins-ci.org/display/JENKINS/Gradle+Plugin)
