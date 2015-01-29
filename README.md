@@ -35,3 +35,7 @@ remove all items on server
 check which project job/view configuration differs from the server version
 
     ./gradlew validateJenkinsItems -Pjenkins_user=jenkins -Pjenkins_pass=<password>
+
+to run all cucumber features
+
+    ./gradlew cucumber

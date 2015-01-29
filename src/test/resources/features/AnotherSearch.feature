@@ -1,6 +1,5 @@
 Feature: Another Search: As a user I want to be able to search for a term
 
-  @smoke
   Scenario Outline: User search
     Given User views page <url>
     Then page <url> is displayed
